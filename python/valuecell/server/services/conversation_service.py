@@ -60,7 +60,7 @@ class ConversationService:
             conversation_item = ConversationListItem(
                 conversation_id=conv.conversation_id,
                 title=conv.title or f"Conversation {conv.conversation_id}",
-                agent_name=conv.agent_name,
+                agent_name=conv.agent_name or "Unknown Agent",
                 update_time=(
                     conv.updated_at.isoformat()
                     if conv.updated_at

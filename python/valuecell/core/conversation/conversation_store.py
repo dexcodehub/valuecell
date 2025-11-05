@@ -139,6 +139,26 @@ class SQLiteConversationStore(ConversationStore):
                     )
                     """
                 )
+                # Schema migration: ensure newly added columns exist on older databases
+                try:
+                    cur = await db.execute("PRAGMA table_info(conversations)")
+                    rows = await cur.fetchall()
+                    column_names = {row[1] for row in rows}
+
+                    # Add agent_name column if missing
+                    if "agent_name" not in column_names:
+                        await db.execute(
+                            "ALTER TABLE conversations ADD COLUMN agent_name TEXT"
+                        )
+
+                    # Ensure status column exists with default 'active'
+                    if "status" not in column_names:
+                        await db.execute(
+                            "ALTER TABLE conversations ADD COLUMN status TEXT DEFAULT 'active'"
+                        )
+                except Exception:
+                    # If PRAGMA or ALTER fails, proceed without blocking initialization
+                    pass
                 await db.commit()
 
             self._initialized = True

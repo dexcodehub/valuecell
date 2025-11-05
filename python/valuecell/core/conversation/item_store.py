@@ -144,6 +144,25 @@ class SQLiteItemStore(ItemStore):
                     ON conversation_items (conversation_id, created_at);
                     """
                 )
+                # Schema migration: ensure newly added columns exist on older databases
+                try:
+                    cur = await db.execute("PRAGMA table_info(conversation_items)")
+                    rows = await cur.fetchall()
+                    column_names = {row[1] for row in rows}
+
+                    # Add agent_name column if missing
+                    if "agent_name" not in column_names:
+                        await db.execute(
+                            "ALTER TABLE conversation_items ADD COLUMN agent_name TEXT"
+                        )
+                    # Ensure metadata column exists
+                    if "metadata" not in column_names:
+                        await db.execute(
+                            "ALTER TABLE conversation_items ADD COLUMN metadata TEXT"
+                        )
+                except Exception:
+                    # If PRAGMA or ALTER fails, proceed without blocking initialization
+                    pass
                 await db.commit()
             self._initialized = True
 
